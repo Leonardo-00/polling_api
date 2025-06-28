@@ -1,3 +1,4 @@
+import os
 from .base import *
 
 DEBUG = True
@@ -14,5 +15,8 @@ DATABASES = {
         'PORT': config("DB_PORT"),
     }
 }
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ALLOW_ALL_ORIGINS = True
