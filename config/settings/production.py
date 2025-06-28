@@ -3,8 +3,8 @@ import os
 import dj_database_url
 
 DEBUG = False
-SECRET_KEY = os.environ["SECRET_KEY"]
-ALLOWED_HOSTS = ["polling-api-project.vercel.app"]
+SECRET_KEY = config("SECRET_KEY")
+ALLOWED_HOSTS = [".vercel.app"]
 
 CSRF_TRUSTED_ORIGINS = [""]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -23,7 +23,7 @@ DATABASES = {
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
-    "polling-api-project.vercel.app",
+    ".vercel.app",
 ]
