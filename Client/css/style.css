@@ -1,0 +1,18 @@
+body {
+    background-color: lightblue !important;
+}
+
+.my-button {
+    border: 1px solid lightblue !important;
+    background-color: white !important;
+}
+
+.login-text {
+    text-align: center !important;
+    margin-bottom: 16px;
+}
+
+.active-page {
+    cursor: pointer !important;
+
+}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <title>Registration</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="css/bootstrap.min.css" />
+    </head>
+    <body>
+        <main>
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 bg-light px-4 py-2 rounded justify-content-center">
+                        <h2 class="login-text col-12">Registration</h2>
+                        <form id="login-form"
+                              class="d-flex flex-column justify-content-center"
+                              method="post">
+                            <div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="username" class="col-sm-2 col-form-label">Username</label>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control" id="username" name="username">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="password1" class="col-sm-2 col-form-label">Password</label>
+                                    <div class="col-sm-6">
+                                        <input type="password" class="form-control" id="password1" name="password">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="password2" class="col-sm-2 col-form-label">Confirm password</label>
+                                    <div class="col-sm-6">
+                                        <input type="password" class="form-control" id="password2" name="password">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="email" class="col-sm-2 col-form-label">Email</label>
+                                    <div class="col-sm-6">
+                                        <input type="email" class="form-control" id="email" name="email">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="first_name" class="col-sm-2 col-form-label">First Name</label>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control" id="first_name" name="first_name">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row justify-content-center">
+                                    <label for="last_name" class="col-sm-2 col-form-label">Last Name</label>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control" id="last_name" name="last_name">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="my-button btn rounded col-12">Register</button>
+                        </form>
+                        <p id="result"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <script>
+            const form = document.getElementById("login-form");
+            form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const data = {
+                username: form.username.value,
+                email: form.email.value,
+                password1: form.password1.value,
+                password2: form.password2.value,
+                first_name: form.first_name.value,
+                last_name: form.last_name.value
+            };
+
+            const response = await fetch("http://localhost:8000/api/auth/registration/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+            });
+
+            const result = document.getElementById("result");
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem("token", data.key);
+                const redirectTo = localStorage.getItem("postLoginRedirect") || "home.html";
+                localStorage.removeItem("postLoginRedirect"); // pulizia
+                window.location.href = redirectTo;
+            } else {
+                const error = await response.json();
+                result.innerText = `Errore: ${JSON.stringify(error)}`;
+            }
+            });
+        </script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

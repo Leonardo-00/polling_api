@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
+</head>
+<body>
+
+    <header>
+            <nav class="navbar navbar-light bg-light d-flex justify-content-between px-4">
+                <ul class="d-flex justify-content-around list-unstyled col-9 align-items-center mb-0">
+                    <li>
+                        <a class="text-decoration-none" href="home.html">Home</a>
+                    </li>
+                    <li>
+                        <a class="text-decoration-none" href="poll_list.html">Poll list</a>
+                    </li>
+                    <li id="create-poll-link">
+                        <a class="text-decoration-none active-page" href="create_poll.html">Create poll</a>
+                    </li>
+                </ul>
+                <div id="authenticated-user" class="justify-content-between align-items-center">
+                            <span id="username-display" class="px-2"></span>
+                            <button onclick="logout()" class="btn border-secondary px-2 py-0">Logout</button>
+                        </div>
+                        <div id="unauthenticated-user" class="justify-content-between">
+                            <span id="welcome-message" class="px-2"></span>
+                            <button id="loginButton" class="btn border-secondary px-2 py-0">Login</button>
+                            <script>
+                                document.getElementById('loginButton').addEventListener('click', function () {
+                                localStorage.setItem("postLoginRedirect", window.location.pathname);
+                                window.location.href = "login.html";
+                                });
+                            </script>
+                </div>
+            </nav>
+    </header>
+    <main>
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-12 d-flex justify-content-end">
+                    <button class="btn my-button rounded px-2 py-0" onclick="location.href='poll_list.html'">Back</button>
+                </div>
+                <div class="col-md-6 bg-light px-4 py-2 rounded">
+                
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            localStorage.removeItem("token");
+            location.reload();  // ricarica la pagina senza il token
+        }
+    </script>
+    <script>
+        const token = localStorage.getItem("token");
+
+        if (token) {
+        fetch("http://localhost:8000/api/auth/user/", {
+            method: "GET",
+            headers: {
+            "Authorization": "Token " + token,
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+            throw new Error("Token non valido");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const username = data.username || "Utente";
+            document.getElementById("authenticated-user").style.display = "flex";
+            document.getElementById("unauthenticated-user").style.display = "none";
+            document.getElementById("username-display").textContent = `Benvenuto, ${username}`;
+        })
+        .catch(error => {
+            document.getElementById("welcome").textContent = "Accesso non effettuato";
+        });
+        } else {
+        document.getElementById("authenticated-user").style.display = "none";
+        document.getElementById("unauthenticated-user").style.display = "flex";
+        document.getElementById("create-poll-link").style.display = "none";
+        document.getElementById("welcome-message").textContent = "Accesso non effettuato";
+        }
+    </script>
+    <script>
+        token = localStorage.getItem("token");
+
+        if (token) {
+            fetch("http://localhost:8000/api/polls/", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Token " + token,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                const pollList = document.getElementById("poll-list");
+                data.forEach(poll => {
+                    const listItem = document.createElement("li");
+                    listItem.className = "d-flex justify-content-between align-items-center mb-2";
+                    const itemButton = document.createElement("button");
+                    itemButton.className = "my-button btn rounded px-2 py-0";
+                    itemButton.textContent = "Details";
+                    itemButton.onclick = function() {
+                        window.location.href = `poll_detail.html?id=${poll.id}`;
+                    };
+                    itemButton.href = `poll_detail.html?id=${poll.id}`;
+                    pollDate = new Date(poll.created_at);
+                    listItem.textContent = `${poll.question} - ${pollDate.toLocaleDateString() + " - " + pollDate.toLocaleTimeString()}`;
+                    listItem.appendChild(itemButton);
+                    pollList.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                console.error("Errore nel recupero dei sondaggi:", error);
+            });
+        }
+        else {
+            fetch("http://localhost:8000/api/polls/", {
+                method: "GET",
+            })
+            .then(response => response.json())
+            .then(data => {
+                const pollList = document.getElementById("poll-list");
+                data.forEach(poll => {
+                    const listItem = document.createElement("li");
+                    listItem.textContent = `${poll.question} - ${poll.created_at}`;
+                    pollList.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                console.error("Errore nel recupero dei sondaggi:", error);
+            });
+        }
+    </script>
+  
+  <script src="js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
