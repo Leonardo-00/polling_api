@@ -25,5 +25,5 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
-    ".vercel.app", "https://leonardo-00.github.io/Polling_API_client"
+    ".vercel.app", "https://leonardo-00.github.io/"
 ]
