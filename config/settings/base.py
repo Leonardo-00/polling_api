@@ -44,9 +44,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'config.middleware.RegexHostMiddleware',
-    'config.middleware.AllowVercelSubdomains',
-    'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
