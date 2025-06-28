@@ -23,7 +23,7 @@ DATABASES = {
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
-    ".vercel.app",
+    ".vercel.app", "https://leonardo-00.github.io/Polling_API_client"
 ]
