@@ -6,7 +6,7 @@ DEBUG = False
 SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = ["polling-api-project.vercel.app"]
 
-CSRF_TRUSTED_ORIGINS = ["https://web-production-085e.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = [""]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 DATABASES = {
