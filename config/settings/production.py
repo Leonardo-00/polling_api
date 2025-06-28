@@ -4,7 +4,7 @@ import dj_database_url
 
 DEBUG = False
 SECRET_KEY = os.environ["SECRET_KEY"]
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["polling-api-project.vercel.app"]
 
 CSRF_TRUSTED_ORIGINS = ["https://web-production-085e.up.railway.app"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -25,5 +25,5 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
-    "https://web-production-085e.up.railway.app",
+    "polling-api-project.vercel.app",
 ]
