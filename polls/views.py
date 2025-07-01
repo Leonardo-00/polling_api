@@ -17,6 +17,8 @@ class PollViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Associa automaticamente l'utente autenticato come creatore del sondaggio
         serializer.save(created_by=self.request.user)
+        
+
 
 
 class LoggedInUserView(APIView):
