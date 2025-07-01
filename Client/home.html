@@ -22,12 +22,12 @@
                         <a class="text-decoration-none active-page" href="create_poll.html">Create poll</a>
                     </li>
                 </ul>
-                <div id="authenticated-user"
+                <div id="authenticated-user d-none"
                      class="justify-content-between align-items-center">
                     <span id="username-display" class="px-2"></span>
                     <button onclick="logout()" class="btn border-secondary px-2 py-0">Logout</button>
                 </div>
-                <div id="unauthenticated-user" class="justify-content-between">
+                <div id="unauthenticated-user" class="justify-content-between d-none">
                     <span id="welcome-message" class="px-2"></span>
                     <button id="loginButton" class="btn border-secondary px-2 py-0">Login</button>
                     <script>
@@ -44,6 +44,7 @@
                 <div class="row justify-content-center">
                     <div class="col-md-6 bg-light px-4 py-2 rounded">
                         <h1>Homepage</h1>
+                        <p id="content"></p>
                     </div>
                 </div>
             </div>
@@ -55,37 +56,41 @@
         }
         </script>
         <script>
-        const token = localStorage.getItem("token");
-
-        if (token) {
-        fetch("http://localhost:8000/api/auth/user/", {
-            method: "GET",
-            headers: {
-            "Authorization": "Token " + token,
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-            console.log("ses")
-            throw new Error("Token non valido");
-            }
-            return response.json();
-        })
-        .then(data => {
-            const username = data.username || "Utente";
-            document.getElementById("authenticated-user").style.display = "flex";
-            document.getElementById("unauthenticated-user").style.display = "none";
-            document.getElementById("username-display").textContent = `Benvenuto, ${username}`;
-        })
-        .catch(error => {
-            document.getElementById("welcome-message").textContent = "Accesso non effettuato";
-        });
-        } else {
-        document.getElementById("authenticated-user").style.display = "none";
-        document.getElementById("unauthenticated-user").style.display = "flex";
-        document.getElementById("create-poll-link").style.display = "none";
-        document.getElementById("welcome-message").textContent = "Accesso non effettuato";
-        }
+            document.addEventListener("DOMContentLoaded", function() {
+                const token = localStorage.getItem("token");
+                if (token) {
+                    fetch("http://localhost:8000/api/auth/user/", {
+                        method: "GET",
+                        headers: {
+                        "Authorization": "Token " + token,
+                        },
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                        console.log("ses")
+                        throw new Error("Token non valido");
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const username = data.username || "Utente";
+                        document.getElementById("authenticated-user").style.removeProperty("display");
+                        document.getElementById("authenticated-user").style.display = "flex";
+                        document.getElementById("welcome-message").style.display = "flex";
+                        document.getElementById("create-poll-link").style.removeProperty("display");
+                        document.getElementById("create-poll-link").style.display = "block";
+                        document.getElementById("username-display").textContent = `Benvenuto, ${username}`;
+                    })
+                    .catch(error => {
+                        document.getElementById("welcome-message").textContent = "Accesso non effettuato";
+                    });
+                    } else {
+                    document.getElementById("authenticated-user").style.display = "none";
+                    document.getElementById("unauthenticated-user").style.display = "flex";
+                    document.getElementById("create-poll-link").style.display = "none";
+                    document.getElementById("welcome-message").textContent = "Accesso non effettuato";
+                    }
+            });
         </script>
         <script src="js/bootstrap.bundle.min.js"></script>
     </body>

@@ -34,4 +34,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         category_name = self.kwargs.get('category_name')
-        return Poll.objects.filter(category__name=category_name)  # Filter by category name
+        return Poll.objects.filter(category__name=category_name)  # Filter by category 
+
+
+class InterestCategoryViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        interests = user.categories.all()  # Assuming user has a ManyToMany relationship with categories
+        return Poll.objects.filter(category__in=interests).exclude(created_by=user)  # Exclude polls created by the user
+
+
