@@ -9,6 +9,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('categories/', CategoriesListView.as_view(), name='category'),
     path('interest/', InterestCategoryViewSet.as_view(), name='interest-category'),
-    path('interest/<int:user_id>/', InterestCategoryViewSet.updateUserInterests(), name='interest-category-user'),
+    path('interest/<int:user_id>/', UserInterestViewSet.as_view(), name='interest-category-user'),
     path('vote/<int:poll_id>/', VoteViewSet.as_view(), name='vote'),
 ]

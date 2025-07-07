@@ -124,3 +124,46 @@ class VoteViewSet(APIView):
         vote.save()
 
         return Response({"message": "Vote recorded successfully"})
+    
+class UserInterestViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user = Account.objects.get(id=user_id)
+        except Account.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        interests = user.favorite_categories.all()
+        serializer = CategorySerializer(interests, many=True)
+        return Response(serializer.data)
+
+    def updateUserInterests(self, user, interests):
+        user.favorite_categories.clear()
+        
+        for interest in interests:
+            category = Category.objects.get(name=interest)
+            user.favorite_categories.add(category)
+
+    def post(self, request, user_id):
+        user = Account.objects.get(id=user_id)
+
+        if not user:
+            return Response({"error": "User not found"}, status=404)
+        
+        if user != request.user:
+            return Response({"error": "You can only update your own interests"}, status=403)
+        
+        interests = request.data.get('interests', [])
+        if not interests:
+            return Response({"error": "No interests provided"}, status=400)
+        
+        if len(interests) == 0:
+            return Response({"error": "You must select at least one interest"}, status=400)
+        
+        if len(interests) > 3:
+            return Response({"error": "You can only select up to 3 interests"}, status=400)
+
+        self.updateUserInterests(user, interests)
+        return Response({"message": "User interests updated successfully"}, status=200)
+    
