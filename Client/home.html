@@ -18,80 +18,35 @@
                     <li>
                         <a class="text-decoration-none" href="poll_list.html">Poll list</a>
                     </li>
-                    <li id="create-poll-link">
-                        <a class="text-decoration-none active-page" href="create_poll.html">Create poll</a>
+                    <li id="create-poll-link" hidden>
+                        <a class="text-decoration-none" href="create_poll.html">Create poll</a>
                     </li>
                 </ul>
-                <div id="authenticated-user d-none"
-                     class="justify-content-between align-items-center">
-                    <span id="username-display" class="px-2"></span>
-                    <button onclick="logout()" class="btn border-secondary px-2 py-0">Logout</button>
-                </div>
-                <div id="unauthenticated-user" class="justify-content-between d-none">
-                    <span id="welcome-message" class="px-2"></span>
-                    <button id="loginButton" class="btn border-secondary px-2 py-0">Login</button>
-                    <script>
-                                document.getElementById('loginButton').addEventListener('click', function () {
-                                localStorage.setItem("postLoginRedirect", window.location.pathname);
-                                window.location.href = "login.html";
-                                });
-                    </script>
+                <div id="user" class="d-flex align-items-center">
+                    <span id="welcome-message" class="px-2">Loading...</span>
+                    <button id="authenticated" onclick="logout()" hidden class="btn border-secondary px-2 py-0">Logout</button>
+                    <button id="unauthenticated" onclick="login()" hidden class="btn border-secondary px-2 py-0">Login</button>
                 </div>
             </nav>
         </header>
         <main>
             <div class="container mt-4">
                 <div class="row justify-content-center">
-                    <div class="col-md-6 bg-light px-4 py-2 rounded">
+                    <div class="col-8 bg-light px-4 py-2 rounded">
                         <h1>Homepage</h1>
-                        <p id="content"></p>
+                        <div id="content">
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
-        <script>
-        function logout() {
-            localStorage.removeItem("token");
-            location.reload();  // ricarica la pagina senza il token
-        }
-        </script>
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                const token = localStorage.getItem("token");
-                if (token) {
-                    fetch("http://localhost:8000/api/auth/user/", {
-                        method: "GET",
-                        headers: {
-                        "Authorization": "Token " + token,
-                        },
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                        console.log("ses")
-                        throw new Error("Token non valido");
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const username = data.username || "Utente";
-                        document.getElementById("authenticated-user").style.removeProperty("display");
-                        document.getElementById("authenticated-user").style.display = "flex";
-                        document.getElementById("welcome-message").style.display = "flex";
-                        document.getElementById("create-poll-link").style.removeProperty("display");
-                        document.getElementById("create-poll-link").style.display = "block";
-                        document.getElementById("username-display").textContent = `Benvenuto, ${username}`;
-                    })
-                    .catch(error => {
-                        document.getElementById("welcome-message").textContent = "Accesso non effettuato";
-                    });
-                    } else {
-                    document.getElementById("authenticated-user").style.display = "none";
-                    document.getElementById("unauthenticated-user").style.display = "flex";
-                    document.getElementById("create-poll-link").style.display = "none";
-                    document.getElementById("welcome-message").textContent = "Accesso non effettuato";
-                    }
-            });
-        </script>
+        <script src="js/script.js"></script>
         <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            window.onload = () => {
+                welcomeUser();
+                loadPollsOfInterest("content");
+            };
+        </script>
     </body>
 </html>

@@ -4,9 +4,11 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'polls', PollViewSet, basename='poll')
-router.register(r'categories', CategoryViewSet, basename='category')  # Assuming you want to use the same viewset for categories
-router.register(r'interests', InterestCategoryViewSet, basename='interest-category')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('categories/', CategoriesListView.as_view(), name='category'),
+    path('interest/', InterestCategoryViewSet.as_view(), name='interest-category'),
+    path('interest/<int:user_id>/', InterestCategoryViewSet.updateUserInterests(), name='interest-category-user'),
+    path('vote/<int:poll_id>/', VoteViewSet.as_view(), name='vote'),
 ]

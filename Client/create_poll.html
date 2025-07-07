@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta charset="UTF-8" />
-    <meta name="description" content="Crea un nuovo sondaggio e aggiungi opzioni personalizzate.">
-    <meta name="keywords" content="sondaggio, poll, crea, opzioni, votazione, questionario">
-    <title>Create Poll</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/bootstrap.min.css" />
-</head>
-<body>
-
-    <header>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="UTF-8" />
+        <meta name="description"
+              content="Crea un nuovo sondaggio e aggiungi opzioni personalizzate.">
+        <meta name="keywords"
+              content="sondaggio, poll, crea, opzioni, votazione, questionario">
+        <title>Create Poll</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="css/bootstrap.min.css" />
+    </head>
+    <body>
+        <header>
             <nav class="navbar navbar-light bg-light d-flex justify-content-between px-4">
                 <ul class="d-flex justify-content-around list-unstyled col-9 align-items-center mb-0">
                     <li>
@@ -20,154 +21,94 @@
                     <li>
                         <a class="text-decoration-none" href="poll_list.html">Poll list</a>
                     </li>
-                    <li id="create-poll-link">
-                        <a class="text-decoration-none active-page" href="create_poll.html">Create poll</a>
+                    <li id="create-poll-link" hidden>
+                        <a class="text-decoration-none" href="create_poll.html">Create poll</a>
                     </li>
                 </ul>
-                <div id="authenticated-user" class="justify-content-between align-items-center">
-                            <span id="username-display" class="px-2"></span>
-                            <button onclick="logout()" class="btn border-secondary px-2 py-0">Logout</button>
-                        </div>
-                        <div id="unauthenticated-user" class="justify-content-between">
-                            <span id="welcome-message" class="px-2"></span>
-                            <button id="loginButton" class="btn border-secondary px-2 py-0">Login</button>
-                            <script>
-                                document.getElementById('loginButton').addEventListener('click', function () {
-                                localStorage.setItem("postLoginRedirect", window.location.pathname);
-                                window.location.href = "login.html";
-                                });
-                            </script>
+                <div id="user" class="d-flex align-items-center">
+                    <span id="welcome-message" class="px-2">Loading...</span>
+                    <button id="authenticated" onclick="logout()" hidden class="btn border-secondary px-2 py-0">Logout</button>
+                    <button id="unauthenticated" onclick="login()" hidden class="btn border-secondary px-2 py-0">Login</button>
                 </div>
             </nav>
-    </header>
-    <main>
-        <div class="container mt-4">
-            <div class="row justify-content-center">
-                <div class="col-md-6 bg-light px-4 py-2 rounded">
-                    <form id="pollForm">
-                        <div class="mb-3">
-                            <label for="question" class="form-label">Domanda</label>
-                            <input type="text" class="form-control" id="question" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Opzioni</label>
-                            <div id="optionsContainer"></div>
-                            <button type="button" class="btn btn-secondary mt-2" onclick="addOption()">Aggiungi opzione</button>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Crea sondaggio</button>
-                    </form>
+        </header>
+        <main>
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-8 bg-light px-4 py-2 rounded">
+                        <form id="pollForm">
+                            <div class="mb-3">
+                                <label for="question" class="form-label">Domanda</label>
+                                <input type="text" class="form-control" id="question" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Opzioni</label>
+                                <div id="optionsContainer"></div>
+                                <button type="button" class="btn btn-secondary mt-2" onclick="addOption()">Aggiungi opzione</button>
+                            </div>
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Categoria</label>
+                                <select class="form-select" id="categories-list" required>
+                                    <option value="" disabled selected>Seleziona una categoria</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Crea sondaggio</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        
-    </main>
-
-    <script>
-        let optionCount = 0;
-
-        function addOption(value = '') {
-            const container = document.getElementById('optionsContainer');
-
-            const optionDiv = document.createElement('div');
-            optionDiv.classList.add('input-group', 'mb-2');
-            optionDiv.innerHTML = `
-            <input type="text" class="form-control option-input" value="${value}" placeholder="Inserisci un'opzione" required>
-            <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Rimuovi</button>
-            `;
-
-            container.appendChild(optionDiv);
-        }
-
-        function removeOption(button) {
-            button.parentElement.remove();
-        }
-
-        document.getElementById('pollForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const question = document.getElementById('question').value;
-
-            const optionInputs = document.querySelectorAll('.option-input');
-            const options = Array.from(optionInputs).map(input => input.value.trim()).filter(v => v !== '');
-
-            if (options.length < 2) {
-            alert("Inserisci almeno due opzioni.");
-            return;
+        </main>
+        <script>
+            window.onload = () => {
+                token = localStorage.getItem('token');
+                if(!token || !checkLogin(token)){
+                    alert("You must be logged in to create a poll.");
+                    window.location.href = "login.html";  // Redirect to login page
+                    return;
+                }
+                welcomeUser();
+                addOption();
+                addOption();
+                loadCategories("categories-list");
             }
 
-            const token = localStorage.getItem('token');
+            document.getElementById('pollForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
 
-            const response = await fetch('http://localhost:8000/api/polls/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${token}`
-            },
-            body: JSON.stringify({
-                question,
-                options
-            })
+                const question = document.getElementById('question').value;
+
+                const optionInputs = document.querySelectorAll('.option-input');
+                const choices = Array.from(optionInputs).map(input => input.value.trim()).filter(v => v !== '');
+                const category = document.getElementById('categories-list').value;
+
+                if (choices.length < 2) {
+                    alert("Inserisci almeno due opzioni.");
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8000/api/polls/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${token}`
+                    },
+                    body: JSON.stringify({
+                        question,
+                        choices,
+                        category
+                    })
+                });
+
+                if (response.ok) {
+                    alert("Sondaggio creato con successo!");
+                    window.location.href = "poll_list.html";  // o altra pagina
+                } else {
+                    const errorData = await response.json();
+                    alert("Errore nella creazione del sondaggio: " + JSON.stringify(errorData));
+                }
             });
-
-            if (response.ok) {
-            alert("Sondaggio creato con successo!");
-            window.location.href = "poll_list.html";  // o altra pagina
-            } else {
-            const errorData = await response.json();
-            alert("Errore nella creazione del sondaggio: " + JSON.stringify(errorData));
-            }
-        });
-
-        // Aggiunge due opzioni di default
-        window.onload = () => {
-            addOption();
-            addOption();
-        }
-    </script>
-
-
-    <script>
-        function logout() {
-            localStorage.removeItem("token");
-            location.assign("home.html");
-        }
-    </script>
-    <script>
-        const token = localStorage.getItem("token");
-
-        if (token) {
-        fetch("http://localhost:8000/api/auth/user/", {
-            method: "GET",
-            headers: {
-            "Authorization": "Token " + token,
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-            throw new Error("Token non valido");
-            }
-            return response.json();
-        })
-        .then(data => {
-            const username = data.username || "Utente";
-            document.getElementById("authenticated-user").style.display = "flex";
-            document.getElementById("unauthenticated-user").style.display = "none";
-            document.getElementById("username-display").textContent = `Benvenuto, ${username}`;
-        })
-        .catch(error => {
-            document.getElementById("welcome").textContent = "Accesso non effettuato";
-        });
-        } else {
-        document.getElementById("authenticated-user").style.display = "none";
-        document.getElementById("unauthenticated-user").style.display = "flex";
-        document.getElementById("create-poll-link").style.display = "none";
-        document.getElementById("welcome-message").textContent = "Accesso non effettuato";
-        }
-    </script>
-  
-  <script src="js/bootstrap.bundle.min.js"></script>
-</body>
+        </script>
+        <script src="js/script.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
+    </body>
 </html>

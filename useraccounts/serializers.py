@@ -21,5 +21,15 @@ class CustomRegisterSerializer(RegisterSerializer):
             'email': self.validated_data.get('email', ''),
             'first_name': self.validated_data.get('first_name', ''),
             'last_name': self.validated_data.get('last_name', ''),
-            'categories': self.validated_data.get('favorite_categories', [])
+            'favorite_categories': self.validated_data.get('favorite_categories', [])
         }
+        
+    def save(self, request):
+        user = super().save(request)
+        cleaned_data = self.get_cleaned_data()
+        categories = cleaned_data.get('favorite_categories', [])
+        if categories:
+            # assegna le categorie many-to-many
+            user.favorite_categories.set(categories)
+        user.save()
+        return user

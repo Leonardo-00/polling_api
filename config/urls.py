@@ -17,13 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
-from polls.views import LoggedInUserView
+from useraccounts.views import LoggedInUserView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/token/', obtain_auth_token),
     path('api/', include('polls.urls')),
-    path('polls/', include('polls.urls')),  # Include the polls app URLs
     path('api/auth/', include('dj_rest_auth.urls')),  # login/logout/password reset
     # Se vuoi anche la registrazione
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
