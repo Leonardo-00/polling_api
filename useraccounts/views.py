@@ -1,12 +1,62 @@
-from django.shortcuts import render
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
 
-# Create your views here.
+from rest_framework import viewsets, generics, permissions
+from rest_framework.views import APIView
+from useraccounts.models import Account
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth import get_user_model
 
-class LoggedInUserView(APIView):
+from useraccounts.serializers import CustomUpdateSerializer
+
+from polls.models import Poll, Category
+from polls.serializers import PollSerializer
+
+User = get_user_model()
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = CustomUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # Restituisce sempre l’utente attualmente autenticato
+        return self.request.user
+
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def whoami(request):
+    return Response({"message": f"{request.user.username}"})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_interest_polls(request):
+    user = request.user
+
+    polls = Poll.objects.exclude(created_by=user).filter(category__in=user.favorite_categories.all())
+    serializer = PollSerializer(polls, many=True)
+    return Response(serializer.data)
+
+# A view to manage user interests
+# This view allows users to retrieve and update their interests (favorite categories)
+class UserInterestViewSet(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        return Response({"message": f"{request.user.username}"})
+    def get(self, request):
+        try:
+            user = request.user
+        except Account.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+        polls = Poll.objects.exclude(created_by=user).filter(category__in=user.favorite_categories.all())
+        serializer = PollSerializer(polls, many=True)
+        return Response(serializer.data)
+
+    def updateUserInterests(self, user, interests):
+        user.favorite_categories.clear()
+        
+        for interest in interests:
+            category = Category.objects.get(name=interest)
+            user.favorite_categories.add(category)
+        user.save()

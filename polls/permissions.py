@@ -11,6 +11,13 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # Write: solo il proprietario può modificare/cancellare
+        return IsOwner().has_object_permission(request, obj)
+    
+class IsOwner(permissions.BasePermission):
+
+    # Permette solo al proprietario dell'oggetto di accedervi.
+
+    def has_object_permission(self, request, obj):
         return obj.created_by == request.user
 
 class IsAuthenticatedOrReadOnly(permissions.BasePermission):

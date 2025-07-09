@@ -7,7 +7,7 @@
               content="Crea un nuovo sondaggio e aggiungi opzioni personalizzate.">
         <meta name="keywords"
               content="sondaggio, poll, crea, opzioni, votazione, questionario">
-        <title>Create Poll</title>
+        <title>Manage Poll</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="css/bootstrap.min.css" />
     </head>
@@ -41,21 +41,21 @@
                     <div class="col-8 bg-light px-4 py-2 rounded">
                         <form id="pollForm">
                             <div class="mb-3">
-                                <label for="question" class="form-label">Domanda</label>
+                                <label for="question" class="form-label">Question</label>
                                 <input type="text" class="form-control" id="question" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Opzioni</label>
+                                <label class="form-label">Choices</label>
                                 <div id="optionsContainer"></div>
-                                <button type="button" class="btn btn-secondary mt-2" onclick="addOption()">Aggiungi opzione</button>
+                                <button type="button" class="btn btn-secondary mt-2" onclick="addOption()">Add choice</button>
                             </div>
                             <div class="mb-3">
-                                <label for="category" class="form-label">Categoria</label>
+                                <label for="category" class="form-label">Category</label>
                                 <select class="form-select" id="categories-list" required>
-                                    <option value="" disabled selected>Seleziona una categoria</option>
+                                    <option value="" disabled selected>Select a category</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary">Crea sondaggio</button>
+                            <button type="submit" class="btn btn-primary">Confirm edits</button>
                         </form>
                     </div>
                 </div>
@@ -63,13 +63,49 @@
         </main>
         <script src="js/script.js"></script>
         <script>
+            let pollData;
+
             window.onload = () => {
                 token = checkLogin();
-                enforceLogin(token, "You must be logged in to create a poll.");
+                enforceLogin(token, "You must be logged in to edit a poll.");
                 welcomeUser();
-                addOption();
-                addOption();
+                loadPollData("pollForm");
                 loadCategories("categories-list");
+            }
+
+            function loadPollData(elementId){
+                const urlParams = new URLSearchParams(window.location.search);
+                const pollId = urlParams.get('id');
+
+                if (!pollId) {
+                    alert("Poll ID is missing in the URL.");
+                    return;
+                }
+
+                fetch(`http://localhost:8000/api/polls/${pollId}/`, {
+                    headers: {
+                        'Authorization': `Token ${token}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+
+                    pollData = data;
+                    document.getElementById('question').value = data.question;
+
+                    const optionsContainer = document.getElementById('optionsContainer');
+                    optionsContainer.innerHTML = ''; // Clear existing options
+
+                    data.choices.forEach(choice => {
+                        addOption(choice.text, choice.id);
+                    });
+
+                    document.getElementById('categories-list').value = data.category;
+                })
+                .catch(error => {
+                    console.error("Error loading poll data:", error);
+                    alert("Failed to load poll data.");
+                });
             }
 
             document.getElementById('pollForm').addEventListener('submit', async function (e) {
@@ -78,33 +114,65 @@
                 const question = document.getElementById('question').value;
 
                 const optionInputs = document.querySelectorAll('.option-input');
+                const ids = Array.from(optionInputs).map(input => input.id.trim()).filter(v => v !== '');
                 const choices = Array.from(optionInputs).map(input => input.value.trim()).filter(v => v !== '');
                 const category = document.getElementById('categories-list').value;
 
-                if (choices.length < 2) {
-                    alert("Inserisci almeno due opzioni.");
+                choices_update = [];
+                for (let i = 0; i < ids.length; i++) {
+                    if (pollData.choices[ids[i]]) {
+                        choices_update.push({
+                            id: ids[i],
+                            text: choices[i],
+                            new: false,
+                            delete: false
+                        });
+                    }
+                    else {
+                        choices_update.push({
+                            text: choices[i],
+                            new: true,
+                            delete: false
+                        });
+                    }
+                }
+
+                for (let i = 0; i < pollData.choices.length; i++) {
+                    if (!ids.includes(pollData.choices[i].id)) {
+                        choices_update.push({
+                            id: pollData.choices[i].id,
+                            text: pollData.choices[i].text,
+                            new: false,
+                            delete: true
+                        });
+                    }
+                }
+
+                if (choices_update.length < 2) {
+                    alert("The poll must have at least two choices.");
                     return;
                 }
 
-                const response = await fetch('http://localhost:8000/api/polls/', {
-                    method: 'POST',
+                const response = await fetch("http://localhost:8000/api/polls/"+pollData.id+"/", {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Token ${token}`
                     },
                     body: JSON.stringify({
                         question,
-                        choices,
+                        choices: [],
+                        choices_update,
                         category
                     })
                 });
 
                 if (response.ok) {
-                    alert("Sondaggio creato con successo!");
-                    window.location.href = "poll_list.html";  // o altra pagina
+                    alert("Poll updated!");
+                    window.location.href = "user_polls.html";  // o altra pagina
                 } else {
                     const errorData = await response.json();
-                    alert("Errore nella creazione del sondaggio: " + JSON.stringify(errorData));
+                    alert("Error during poll update: " + JSON.stringify(errorData));
                 }
             });
         </script>

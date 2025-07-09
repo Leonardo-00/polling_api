@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from polls.models import Category
+from useraccounts.models import Account
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -33,3 +34,53 @@ class CustomRegisterSerializer(RegisterSerializer):
             user.favorite_categories.set(categories)
         user.save()
         return user
+
+class CustomUpdateSerializer(serializers.ModelSerializer):
+    favorite_categories = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        many=True,
+        required=False
+    )
+
+    class Meta:
+        model = Account
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'favorite_categories']
+        read_only_fields = ['id']
+        
+    def validate(self, attrs):
+        super().validate(attrs)
+        
+        if 'username'  in attrs:
+            username = attrs['username']
+            if Account.objects.filter(username=username).exists():
+                raise serializers.ValidationError("Username already exists.")
+        
+        if 'favorite_categories' in attrs:
+            categories = attrs['favorite_categories']
+            if not isinstance(categories, list):
+                raise serializers.ValidationError("Favorite categories must be a list of category IDs.")
+            for category in categories:
+                if not Category.objects.filter(name=category.name).exists():
+                    raise serializers.ValidationError(f"Category with name {category.name} does not exist.")
+                
+            if len(categories) < 1:
+                raise serializers.ValidationError("You must select at least one favorite category.")
+            
+            if len(categories) > 3:
+                raise serializers.ValidationError("You can select a maximum of 3 favorite categories.")
+        return attrs
+    
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.email = validated_data.get('email', instance.email)
+        
+        categories = validated_data.get('favorite_categories', [])
+        if categories:
+            instance.favorite_categories.set(categories)
+        
+        if 'password1' in validated_data:
+            instance.set_password(validated_data['password1'])
+        
+        instance.save()
+        return instance

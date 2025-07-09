@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 from rest_framework import viewsets
 
@@ -20,7 +22,6 @@ class PollViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
     
     def perform_create(self, serializer):
-        # Associa automaticamente l'utente autenticato come creatore del sondaggio
         serializer.save(created_by=self.request.user)
         
     def get_queryset(self):    
@@ -30,48 +31,16 @@ class PollViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(category=category)
         return queryset
 
-
 #A viewset to retrieve polls by category
 # This assumes that you have a foreign key relationship from Poll to Category 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Poll.objects.all()  # Assuming you want to list all polls for the category
-    serializer_class = PollSerializer  # Use the appropriate serializer for categories
-    permission_classes = [IsOwnerOrReadOnly]  # Adjust permissions as needed
+    queryset = Poll.objects.all()
+    serializer_class = PollSerializer
+    permission_classes = [IsOwnerOrReadOnly]
 
     def get_queryset(self):
         category_name = self.kwargs.get('category_name')
-        return Poll.objects.filter(category__name=category_name)  # Filter by category 
-
-
-#A view to get all the polls of interest for a user
-# This view retrieves polls that belong to the user's favorite categories, excluding polls created by the user
-class InterestCategoryViewSet(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        interests = user.favorite_categories.all()
-        polls =  Poll.objects.filter(category__in=interests).exclude(created_by=user)
-        serializer = PollSerializer(polls, many=True)
-        return Response(serializer.data)
-    
-    def updateUserInterests(self, request, user_id):
-        user = Account.objects.get(id=user_id)
-        interests = request.data.get('interests', [])
-        
-        # Clear existing interests
-        user.favorite_categories.clear()
-        
-        # Add new interests
-        for interest in interests:
-            category = Category.objects.get(name=interest)
-            user.favorite_categories.add(category)
-        
-        return Response({"message": "User interests updated successfully"})
-
-
-
+        return Poll.objects.filter(category__name=category_name)
 
 #A view to list all categories
 class CategoriesListView(APIView):
@@ -85,10 +54,11 @@ class CategoriesListView(APIView):
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
 
-
+#A view to handle voting on polls
+# This view allows users to vote on a poll and retrieves votes for a specific poll
 class VoteViewSet(APIView):
-    VoteSerializer = VoteSerializer  # Assuming you have a serializer for votes
-    permission_classes = [IsAuthenticatedOrReadOnly]  # Custom permission to check if the user can vote
+    VoteSerializer = VoteSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
     def get(self, request, poll_id):
         try:
@@ -96,7 +66,6 @@ class VoteViewSet(APIView):
         except Poll.DoesNotExist:
             return Response({"error": "Poll not found"}, status=404)
 
-        # Retrieve all votes for the poll
         votes = poll.vote_set.all()
         serializer = self.VoteSerializer(votes, many=True)
         return Response(serializer.data)
@@ -107,63 +76,68 @@ class VoteViewSet(APIView):
         
         if not option_id:
             return Response({"error": "Option ID is required"}, status=400)
-
+        
+        if request.user == poll.created_by:
+            return Response({"error": "You cannot vote on your own poll"}, status=403)
+        
         try:
-            option = poll.choices.get(id=option_id)
+            choice = poll.choices.get(id=option_id)
         except Choice.DoesNotExist:
             return Response({"error": "Option not found"}, status=404)
+        
 
-        # Add the vote
-        vote = self.VoteSerializer(data={
-            'poll': poll.id,
-            'choice': option.id,
-            'voted_by': request.user.id
-        })
-        if not vote.is_valid():
-            return Response(vote.errors, status=400)
-        vote.save()
+        vote, created = Vote.objects.update_or_create(
+            poll=poll,
+            voted_by=request.user,
+            defaults={'choice': choice}
+        )
 
-        return Response({"message": "Vote recorded successfully"})
+        if created:
+            return Response({"message": "Voto registrato."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message": "Voto aggiornato."}, status=status.HTTP_200_OK)
+
+# A view to retrieve poll results
+# This view retrieves the results of a specific poll, including the number of votes for each choice
+class PollResultsView(APIView):
+    permission_classes = [AllowAny]
     
-class UserInterestViewSet(APIView):
-    permission_classes = [IsAuthenticated]
+    def get(self, request, poll_id):
+        poll = get_object_or_404(Poll, id=poll_id)
+        choices = (
+            poll.choices
+            .annotate(votes_count=models.Count("votes"))
+            .values("id", "text", "votes_count")
+        )
 
-    def get(self, request, user_id):
-        try:
-            user = Account.objects.get(id=user_id)
-        except Account.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+        results = []
+        for choice in choices:
+            if(request.user.is_authenticated and Vote.objects.filter(poll=poll, choice__text=choice["text"], voted_by=request.user).exists()):
+                voted = True
+            else:
+                voted = False
+            results.append({
+                "id": choice["id"],
+                "text": choice["text"],
+                "votes": choice["votes_count"],
+                "voted": voted
+            })
 
-        interests = user.favorite_categories.all()
-        serializer = CategorySerializer(interests, many=True)
+        data = {
+            "poll_id": poll.id,
+            "question": poll.question,
+            "choices": results
+        }
+
+        return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_polls(request):
+    if request.user.is_authenticated:
+        polls = Poll.objects.filter(created_by=request.user)
+        serializer = PollSerializer(polls, many=True)
         return Response(serializer.data)
-
-    def updateUserInterests(self, user, interests):
-        user.favorite_categories.clear()
-        
-        for interest in interests:
-            category = Category.objects.get(name=interest)
-            user.favorite_categories.add(category)
-
-    def post(self, request, user_id):
-        user = Account.objects.get(id=user_id)
-
-        if not user:
-            return Response({"error": "User not found"}, status=404)
-        
-        if user != request.user:
-            return Response({"error": "You can only update your own interests"}, status=403)
-        
-        interests = request.data.get('interests', [])
-        if not interests:
-            return Response({"error": "No interests provided"}, status=400)
-        
-        if len(interests) == 0:
-            return Response({"error": "You must select at least one interest"}, status=400)
-        
-        if len(interests) > 3:
-            return Response({"error": "You can only select up to 3 interests"}, status=400)
-
-        self.updateUserInterests(user, interests)
-        return Response({"message": "User interests updated successfully"}, status=200)
-    
+    else:
+        return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)

@@ -18,20 +18,17 @@
                     <li>
                         <a class="text-decoration-none" href="poll_list.html">Poll list</a>
                     </li>
-                    <li id="create-poll-link" hidden>
+                    <li id="user-polls-link" class="authenticated-only" hidden>
+                        <a class="text-decoration-none" href="user_polls.html">My polls</a>
+                    </li>
+                    <li id="create-poll-link" class="authenticated-only" hidden>
                         <a class="text-decoration-none" href="create_poll.html">Create poll</a>
                     </li>
                 </ul>
                 <div id="user" class="d-flex align-items-center">
                     <span id="welcome-message" class="px-2">Loading...</span>
-                    <button id="authenticated"
-                            onclick="logout()"
-                            hidden
-                            class="btn border-secondary px-2 py-0">Logout</button>
-                    <button id="unauthenticated"
-                            onclick="login()"
-                            hidden
-                            class="btn border-secondary px-2 py-0">Login</button>
+                    <button id="authenticated" onclick="logout()" hidden class="btn border-secondary px-2 py-0">Logout</button>
+                    <button id="unauthenticated" onclick="login()" hidden class="btn border-secondary px-2 py-0">Login</button>
                 </div>
             </nav>
         </header>
@@ -43,12 +40,12 @@
                                 onclick="location.href='poll_list.html'">Back</button>
                     </div>
                     <div id="poll-details" class="col-8 bg-light px-4 py-2 rounded">
-                        <h1 id="poll-question">Loading...</h1>
-                        <div id="poll-options" class="list-group">
+                        <h1 id="poll-question"></h1>
+                        <ul id="poll-options" class="list-group list-unstyled">
                             <!-- Poll options will be dynamically inserted here -->
-                        </div>
+                        </ul>
                         <div class="mt-3">
-                            <button id="vote-button" hidden class="btn btn-primary" onclick="vote()">Vote</button>
+                            <button id="vote-button" hidden class="btn btn-primary">Vote</button>
                         </div>
                     </div>
                 </div>

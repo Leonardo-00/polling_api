@@ -4,5 +4,5 @@ from django.contrib.auth.models import AbstractUser
 
 
 class Account(AbstractUser):
-    
+    username = models.CharField(max_length=150, unique=True, blank=False)
     favorite_categories = models.ManyToManyField('polls.Category', blank=True)

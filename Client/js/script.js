@@ -1,5 +1,6 @@
+let baseUrl = "http://localhost:8000/";
+
 function logout() {
-    console.log("ses");
     localStorage.removeItem("token");
     location.reload(); // ricarica la pagina senza il token
 }
@@ -11,11 +12,13 @@ function login() {
 
 async function checkLogin() {
     token = localStorage.getItem("token");
-    if (!token) return null;
 
+    if (!token) {
+        return null;
+    }
     try {
-        const response = await fetch("http://localhost:8000/whoami/", {
-            method: "POST",
+        const response = await fetch(baseUrl + "api/users/whoami/", {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Token ${token}`,
@@ -26,6 +29,8 @@ async function checkLogin() {
             return null;
         }
         else {
+            const data = await response.json();
+            localStorage.setItem("username", data.message);
             return token;
         }
     } catch (err) {
@@ -38,21 +43,13 @@ async function welcomeUser() {
     const token = await checkLogin();
 
     if (token) {
-        const response = await fetch("http://localhost:8000/whoami/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Token ${token}`,
-            },
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-            document.getElementById("welcome-message").innerText =
-                "Welcome " + data.message + "!";
-            document.getElementById("authenticated").removeAttribute("hidden");
-            document.getElementById("unauthenticated").style.display = "none";
-        document.getElementById("create-poll-link").removeAttribute("hidden");
+        document.getElementById("welcome-message").innerText =
+            "Welcome " + localStorage["username"] + "!";
+        document.getElementById("authenticated").removeAttribute("hidden");
+        document.getElementById("unauthenticated").style.display = "none";
+        hiddenElements = document.getElementsByClassName("authenticated-only");
+        for (let i = 0; i < hiddenElements.length; i++) {
+            hiddenElements[i].removeAttribute("hidden");
         }
     } else {
         document.getElementById("welcome-message").innerText = "Guest user";
@@ -62,7 +59,7 @@ async function welcomeUser() {
 }
 
 async function loadPollsOfInterest(elementId) {
-    const token = localStorage.getItem("token");
+    const token = await checkLogin();
     if (!token){
         const noPollsMessage = document.createElement("p");
         noPollsMessage.textContent = "Please log in to see polls of interest.";
@@ -70,10 +67,8 @@ async function loadPollsOfInterest(elementId) {
         return;
     };
 
-    const isLoggedIn = await checkLogin(token);
-
-    if (isLoggedIn) {
-        const response = await fetch("http://localhost:8000/api/interest/", {
+    if (token) {
+        const response = await fetch(baseUrl + "api/users/interest/", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -92,13 +87,13 @@ async function loadPollsOfInterest(elementId) {
 
             renderPolls(data, elementId);
         } else {
-            console.error("Errore nel recupero dei sondaggi di interesse:", data);
+            console.error("Error retrieving polls of interest: ", data);
         }
     }
 }
 
 function loadCategories(elementId) {
-    fetch("http://localhost:8000/api/categories/")
+    fetch(baseUrl + "api/polls/categories/")
         .then((response) => response.json())
         .then((data) => {
             const categoriesList = document.getElementById(elementId);
@@ -110,7 +105,7 @@ function loadCategories(elementId) {
             });
         })
         .catch((error) => {
-            console.error("Error loading categories:", error);
+            console.error("Error loading categories: ", error);
         });
 }
 
@@ -118,7 +113,7 @@ function loadPolls(elementId) {
     const selectedCategory = document.getElementById("category-select").value;
     const pollList = document.getElementById(elementId || "poll-list");
     pollList.innerHTML = ""; // Clear existing polls
-    let url = "http://localhost:8000/api/polls/";
+    let url = baseUrl + "api/polls/";
     if (selectedCategory) {
         url += `?category=${encodeURIComponent(selectedCategory)}`;
     }
@@ -136,11 +131,11 @@ function loadPolls(elementId) {
             renderPolls(data, elementId);
         })
         .catch((error) => {
-            console.error("Errore nel recupero dei sondaggi:", error);
+            console.error("Error retrieving polls: ", error);
         });
 }
 
-function renderPolls(data, elementId) {
+function renderPolls(data, elementId, action = "details") {
     const container = document.getElementById(elementId);
     container.innerHTML = ""; // svuota il contenuto precedente
 
@@ -181,13 +176,22 @@ function renderPolls(data, elementId) {
             pollDate.toLocaleDateString() + " " + pollDate.toLocaleTimeString();
 
         const actionsCell = document.createElement("td");
-        const detailsBtn = document.createElement("button");
-        detailsBtn.className = "btn btn-sm btn-primary";
-        detailsBtn.textContent = "Details";
-        detailsBtn.onclick = function () {
-            window.location.href = `poll_detail.html?id=${poll.id}`;
-        };
-        actionsCell.appendChild(detailsBtn);
+        const actionBtn = document.createElement("button");
+        actionBtn.className = "btn btn-sm btn-primary";
+        // Aggiungi un'azione in base al parametro action
+        if (action === "manage") {
+            actionBtn.textContent = "Manage";
+            actionBtn.onclick = function () {
+                window.location.href = `manage_poll.html?id=${poll.id}`;
+            }
+        }
+        else if (action === "details") {
+            actionBtn.textContent = "Details";
+            actionBtn.onclick = function () {
+                window.location.href = `poll_detail.html?id=${poll.id}`;
+            };
+        }
+        actionsCell.appendChild(actionBtn);
 
         row.appendChild(questionCell);
         row.appendChild(categoryCell);
@@ -202,18 +206,33 @@ function renderPolls(data, elementId) {
     container.appendChild(table);
 }
 
-
-function loadPollDetails(){
+async function loadPollDetails(){
     const urlParams = new URLSearchParams(window.location.search);
     const pollId = urlParams.get('id');
+
+    document.getElementById('poll-question').innerHTML = 'Loading...';
+    document.getElementById('poll-options').innerHTML = ''; // Clear existing options
+    document.getElementById('vote-button').hidden = true; // Hide vote button initially
+    
 
     if (!pollId) {
         alert("Poll ID is missing in the URL.");
         return;
     }
 
-    fetch(`http://localhost:8000/api/polls/${pollId}/`, {
+    const optionsList = document.getElementById('poll-options');
+
+    const headers = {};
+
+    const token = await checkLogin();
+    if (token) {
+        headers['Content-Type'] = 'application/json';
+        headers['Authorization'] = `Token ${token}`;
+    }
+
+    fetch( baseUrl +`api/polls/${pollId}/results/`, {
         method: 'GET',
+        headers: headers,
     })
         .then(async response => {
             if (response.status === 404) {
@@ -225,27 +244,89 @@ function loadPollDetails(){
             }
             const data = await response.json();
 
+            const authenticated = await checkLogin();
+
             document.getElementById('poll-question').innerText = data.question;
-            const optionsList = document.getElementById('poll-options');
             optionsList.innerHTML = ''; // Clear existing options
+            totalVotes = data.choices.reduce((sum, choice) => sum + choice.votes, 0);
             data.choices.forEach(choice => {
                 const listItem = document.createElement('li');
-                listItem.textContent = choice.text;
+                listItem.className = 'list-group-item d-flex align-items-center';
+                if (authenticated) {
+                    radioButton = document.createElement('input');
+                    radioButton.type = 'radio';
+                    radioButton.name = 'poll-choice';
+                    radioButton.value = choice.id;
+                    if(choice.voted)
+                        radioButton.checked = true;
+                    radioButton.id = `choice-${choice.id}`;
+                    listItem.appendChild(radioButton);
+                    radioButton.classList.add('me-2');
+                    radioButton.dataset.choiceId = choice.id;
+                }
+                choiceText = document.createElement('span');
+                choiceText.textContent = choice.text + " - Votes: " + choice.votes + (totalVotes > 0 ? ` (${((choice.votes / totalVotes) * 100).toFixed(2)}%)` : '');
+                listItem.appendChild(choiceText);
                 optionsList.appendChild(listItem);
             });
-            document.getElementById("vote-button").hidden = false; // Show the vote button
+            if(authenticated){
+                document.getElementById('vote-button').hidden = false;
+                document.getElementById('vote-button').onclick = function() {
+                    const selectedChoice = document.querySelector('input[name="poll-choice"]:checked');
+                    if (selectedChoice) {
+                        const choiceId = selectedChoice.value;
+                        submitVote(pollId, choiceId);
+                    } else {
+                        alert("Please select a choice before voting.");
+                    }
+                }
+            }
+            
         })
         .catch(error => {
         });
+    
+    
 }
 
-function addOption(value = '') {
+function submitVote(pollId, choiceId) {
+    const token = localStorage.getItem("token") || checkLogin();
+    if (!token) {
+        alert("You must be logged in to vote.");
+        return;
+    }
+
+    fetch(baseUrl + "api/polls/vote/${pollId}/", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify({ option_id: choiceId }),
+    }).then(response => {
+        if (response.ok) {
+            alert("Vote submitted successfully!");
+            // Reload the poll details to reflect the new vote count
+        } else {
+            response.json().then(data => {
+                alert(data.error);
+            });
+        }
+        loadPollDetails();
+    }).catch(error => {
+        console.error("Error submitting vote: ", error);
+        alert("An error occurred while submitting your vote.");
+    });
+
+}
+
+function addOption(value = '', id= null) {
     const container = document.getElementById('optionsContainer');
 
     const optionDiv = document.createElement('div');
     optionDiv.classList.add('input-group', 'mb-2');
     optionDiv.innerHTML = `
-    <input type="text" class="form-control option-input" value="${value}" placeholder="Inserisci un'opzione" required>
+    <input type="text" class="form-control option-input" id="${id}" value="${value}" placeholder="Inserisci un'opzione" required>
     <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Rimuovi</button>
     `;
 
@@ -254,4 +335,43 @@ function addOption(value = '') {
 
 function removeOption(button) {
     button.parentElement.remove();
+}
+
+async function loadUserPolls(elementId) {
+
+    const token = await checkLogin();
+    enforceLogin(token, "You must be logged in to view your polls.");
+    const response = await fetch(baseUrl + "api/polls/user-polls/", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Token ${token}`,
+        },
+    });
+
+    const data = await response.json();
+    
+    if(!response.ok) {
+        const errorMessage = document.createElement("p");
+        errorMessage.textContent = "Error loading polls: " + data.detail;
+        document.getElementById(elementId).appendChild(errorMessage);
+        return;
+    }
+
+    if (data.length === 0) {
+        const noPollsMessage = document.createElement("p");
+        noPollsMessage.textContent = "No polls found.";
+        document.getElementById(elementId).appendChild(noPollsMessage);
+        return;
+    }
+
+    renderPolls(data, elementId, "manage");
+
+}
+
+function enforceLogin(token, message) {
+    if (!token) {
+        alert(message);
+        login();
+    }
 }
