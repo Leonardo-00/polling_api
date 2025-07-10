@@ -34,11 +34,11 @@ If you want to clone the repo locally, you need to follow these steps:
 3) Install dependencies: pip install -r requirements.txt
 4) Apply migrations: python manage.py migrate
 5) load fixtures: python manage.py:
-    python manage.py loaddata dumps/accounts.json
-    python manage.py loaddata dumps/categories.json
-    python manage.py loaddata dumps/polls.json
-    python manage.py loaddata dumps/choices.json
-    python manage.py loaddata dumps/votes.json
+    - python manage.py loaddata dumps/accounts.json
+    - python manage.py loaddata dumps/categories.json
+    - python manage.py loaddata dumps/polls.json
+    - python manage.py loaddata dumps/choices.json
+    - python manage.py loaddata dumps/votes.json
 6) (optional) Create a superuser: python manage.py createsuperuser
 7) Start the server: python manage.py runserver
 
