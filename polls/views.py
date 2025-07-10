@@ -25,7 +25,7 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
         
     def get_queryset(self):    
-        queryset = Poll.objects.all()
+        queryset = Poll.objects.all().order_by('-created_at')
         category = self.request.query_params.get('category', None)
         if category:
             queryset = queryset.filter(category=category)
@@ -34,7 +34,7 @@ class PollViewSet(viewsets.ModelViewSet):
 #A viewset to retrieve polls by category
 # This assumes that you have a foreign key relationship from Poll to Category 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Poll.objects.all()
+    queryset = Poll.objects.all().order_by('-created_at')
     serializer_class = PollSerializer
     permission_classes = [IsOwnerOrReadOnly]
 
@@ -50,7 +50,7 @@ class CategoriesListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        categories = Category.objects.all()
+        categories = Category.objects.all().order_by('name')
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
 

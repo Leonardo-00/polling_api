@@ -40,12 +40,14 @@
                 Not registered yet? <a class="my-button btn rounded px-2 py-0" href="reg.html">Signup</a>
               </p>
             </div>
-            <p id="result"></p>
           </div>
         </div>
       </div>
     </main>
+    <script src = "js/script.js"></script>
     <script>
+
+
     const form = document.getElementById("login-form");
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -53,15 +55,13 @@
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
 
-      const response = await fetch("http://localhost:8000/api/auth/login/", {
+      const response = await fetch(baseUrl + "api/auth/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
-
-      const result = document.getElementById("result");
 
       if (response.ok) {
         const data = await response.json();
@@ -71,7 +71,8 @@
         window.location.href = redirectTo;
       } else {
         const error = await response.json();
-        result.innerText = `Errore: ${JSON.stringify(error)}`;
+        alert("The username or password is incorrect.");
+        
       }
     });
     </script>

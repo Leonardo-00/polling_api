@@ -26,7 +26,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def whoami(request):
-    return Response({"message": f"{request.user.username}"})
+    return Response({"username": f"{request.user.username}"})
 
 
 @api_view(['GET'])

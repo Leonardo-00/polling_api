@@ -8,5 +8,5 @@ router = DefaultRouter()
 urlpatterns = [
     path('whoami/', whoami, name='whoami'),
     path('interest/', get_user_interest_polls, name='interest-category'),
-    path('', UserProfileView.as_view(), name='user-profile'),
+    path('profile/', UserProfileView.as_view(), name='user-profile'),
 ]

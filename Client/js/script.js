@@ -30,7 +30,7 @@ async function checkLogin() {
         }
         else {
             const data = await response.json();
-            localStorage.setItem("username", data.message);
+            localStorage.setItem("username", data.username);
             return token;
         }
     } catch (err) {
@@ -44,9 +44,7 @@ async function welcomeUser() {
 
     if (token) {
         document.getElementById("welcome-message").innerText =
-            "Welcome " + localStorage["username"] + "!";
-        document.getElementById("authenticated").removeAttribute("hidden");
-        document.getElementById("unauthenticated").style.display = "none";
+            "Welcome " + localStorage["username"] +"!";
         hiddenElements = document.getElementsByClassName("authenticated-only");
         for (let i = 0; i < hiddenElements.length; i++) {
             hiddenElements[i].removeAttribute("hidden");
@@ -54,7 +52,6 @@ async function welcomeUser() {
     } else {
         document.getElementById("welcome-message").innerText = "Guest user";
         document.getElementById("unauthenticated").removeAttribute("hidden");
-        document.getElementById("authenticated").style.display = "none";
     }
 }
 
@@ -296,7 +293,7 @@ function submitVote(pollId, choiceId) {
         return;
     }
 
-    fetch(baseUrl + "api/polls/vote/${pollId}/", {
+    fetch(baseUrl + "api/polls/vote/"+pollId+"/", {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -41,20 +41,30 @@ class CustomUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    
+    oldpw = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    pw1 = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    pw2 = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Account
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'favorite_categories']
-        read_only_fields = ['id']
+        fields = ['id', 'username', 'email', 'oldpw', 'pw1', 'pw2', 'first_name', 'last_name', 'favorite_categories']
+        read_only_fields = ['id', 'username']
         
     def validate(self, attrs):
         super().validate(attrs)
         
-        if 'username'  in attrs:
-            username = attrs['username']
-            if Account.objects.filter(username=username).exists():
-                raise serializers.ValidationError("Username already exists.")
-        
+        user = self.instance
+        if 'oldpw' in attrs and 'pw1' in attrs:
+            old_password = attrs['oldpw']
+            password1 = attrs['pw1']
+            if not user.check_password(old_password):
+                raise serializers.ValidationError("Old password is incorrect.")
+            if password1 != attrs.get('pw2'):
+                raise serializers.ValidationError("New passwords do not match.")
+            if len(password1) < 8:
+                raise serializers.ValidationError("Password must be at least 8 characters long.")
+
         if 'favorite_categories' in attrs:
             categories = attrs['favorite_categories']
             if not isinstance(categories, list):
@@ -75,12 +85,14 @@ class CustomUpdateSerializer(serializers.ModelSerializer):
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.email = validated_data.get('email', instance.email)
         
+        print(validated_data)
+        
         categories = validated_data.get('favorite_categories', [])
         if categories:
             instance.favorite_categories.set(categories)
         
-        if 'password1' in validated_data:
-            instance.set_password(validated_data['password1'])
+        if 'pw1' in validated_data:
+            instance.set_password(validated_data['pw1'])
         
         instance.save()
         return instance

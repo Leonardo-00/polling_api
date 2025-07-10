@@ -14,7 +14,7 @@
     <body>
         <header>
             <nav class="navbar navbar-light bg-light d-flex justify-content-between px-4">
-                <ul class="d-flex justify-content-around list-unstyled col-9 align-items-center mb-0">
+                <ul class="d-flex justify-content-around list-unstyled col-8 align-items-center mb-0">
                     <li>
                         <a class="text-decoration-none" href="home.html">Home</a>
                     </li>
@@ -30,7 +30,10 @@
                 </ul>
                 <div id="user" class="d-flex align-items-center">
                     <span id="welcome-message" class="px-2">Loading...</span>
-                    <button id="authenticated" onclick="logout()" hidden class="btn border-secondary px-2 py-0">Logout</button>
+                    <button onclick="logout()" class="btn border-secondary px-2 py-0 authenticated-only me-2" hidden>Logout</button>
+                    <button id="profile-button" class="btn border-secondary px-2 py-0 authenticated-only" hidden>
+                        <a href="manage_profile.html" class="text-decoration-none text-black">Manage Profile</a>
+                    </button>
                     <button id="unauthenticated" onclick="login()" hidden class="btn border-secondary px-2 py-0">Login</button>
                 </div>
             </nav>
@@ -82,7 +85,7 @@
                     return;
                 }
 
-                fetch(`http://localhost:8000/api/polls/${pollId}/`, {
+                fetch(baseUrl + "api/polls/" + pollId +"/", {
                     headers: {
                         'Authorization': `Token ${token}`
                     }
@@ -153,7 +156,7 @@
                     return;
                 }
 
-                const response = await fetch("http://localhost:8000/api/polls/"+pollData.id+"/", {
+                const response = await fetch(baseUrl + "api/polls/"+pollData.id+"/", {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

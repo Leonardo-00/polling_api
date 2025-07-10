@@ -1,13 +1,32 @@
-Homepage of the client: https://leonardo-00.github.io/Polling_API_client/home.html
+## Polls Web Application
 
-Vercel deployment: polling-api-project.vercel.app
+This project is a web application that allows users to register, select their favorite categories, create polls with choices, vote on polls, and view poll results.
 
-The api offers endpoints for
+It is built with **Django REST Framework**, with a frontend that interacts via JSON API.
 
-1) Retrieving polls, with a list of all the polls, and a list of the polls of a user, only for authenticated users
-2) Creating and editing polls, only for authenticated users
-3) Retrieving polls results for all users and voting only for authenticated ones
-  
-The authenticated user can choos between 1 and 3 favorite categories on registration, and in the homepage, once authenticated, can see a list of polls of his favorite categories
+---
 
-When a user edits a poll, editing a choice, all the votes to that choice will be deleted
+## Features
+
+- User registration and login
+- Favorite categories selection (1–3 categories)
+- Poll creation (with choices and category)
+- Voting (one vote per poll, but can change choice)
+- Poll result statistics
+- Admin interface
+
+# Homepage of the client: https://leonardo-00.github.io/Polling_API_client/home.html
+
+Vercel deployment: https://polling-api-three-rho.vercel.app/
+The api is deployed on vercel, the url above is the one where all requests from the client are sent, but it also accepts requests from postman for testing purposes
+
+Authentication is managed using dj-rest-auth, and the user class and serializer have been extended to accept a list of categories on creation and update.
+
+Below is a list of the main API endpoints, their HTTP methods, and the expected JSON input/output formats.
+
+
+
+
+
+
+
