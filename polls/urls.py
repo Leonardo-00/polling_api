@@ -8,7 +8,6 @@ router.register(r'', PollViewSet, basename='poll')
 
 
 urlpatterns = [
-    path('user-polls/', get_user_polls, name='user-polls'),
     path('categories/', CategoriesListView.as_view(), name='category'),
     path('vote/<int:poll_id>/', VoteViewSet.as_view(), name='vote'),
     path('<int:poll_id>/results/', PollResultsView.as_view(), name='poll-results'),

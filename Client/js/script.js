@@ -65,7 +65,7 @@ async function loadPollsOfInterest(elementId) {
     };
 
     if (token) {
-        const response = await fetch(baseUrl + "api/users/interest/", {
+        const response = await fetch(baseUrl + "api/polls/?interest=true", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -121,7 +121,7 @@ function loadPolls(elementId) {
         .then((data) => {
             if (data.length === 0) {
                 const noPollsMessage = document.createElement("p");
-                noPollsMessage.textContent = "Nessun sondaggio trovato.";
+                noPollsMessage.textContent = "No polls found.";
                 pollList.appendChild(noPollsMessage);
                 return;
             }
@@ -323,8 +323,8 @@ function addOption(value = '', id= null) {
     const optionDiv = document.createElement('div');
     optionDiv.classList.add('input-group', 'mb-2');
     optionDiv.innerHTML = `
-    <input type="text" class="form-control option-input" id="${id}" value="${value}" placeholder="Inserisci un'opzione" required>
-    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Rimuovi</button>
+    <input type="text" class="form-control option-input" id="${id}" value="${value}" placeholder="Insert a new choice" required>
+    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Remove</button>
     `;
 
     container.appendChild(optionDiv);
@@ -338,7 +338,7 @@ async function loadUserPolls(elementId) {
 
     const token = await checkLogin();
     enforceLogin(token, "You must be logged in to view your polls.");
-    const response = await fetch(baseUrl + "api/polls/user-polls/", {
+    const response = await fetch(baseUrl + "api/polls/?username=" + localStorage["username"], {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

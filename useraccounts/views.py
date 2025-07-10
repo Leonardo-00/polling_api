@@ -28,16 +28,6 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 def whoami(request):
     return Response({"username": f"{request.user.username}"})
 
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_interest_polls(request):
-    user = request.user
-
-    polls = Poll.objects.exclude(created_by=user).filter(category__in=user.favorite_categories.all())
-    serializer = PollSerializer(polls, many=True)
-    return Response(serializer.data)
-
 # A view to manage user interests
 # This view allows users to retrieve and update their interests (favorite categories)
 class UserInterestViewSet(APIView):
@@ -52,11 +42,3 @@ class UserInterestViewSet(APIView):
         polls = Poll.objects.exclude(created_by=user).filter(category__in=user.favorite_categories.all())
         serializer = PollSerializer(polls, many=True)
         return Response(serializer.data)
-
-    def updateUserInterests(self, user, interests):
-        user.favorite_categories.clear()
-        
-        for interest in interests:
-            category = Category.objects.get(name=interest)
-            user.favorite_categories.add(category)
-        user.save()

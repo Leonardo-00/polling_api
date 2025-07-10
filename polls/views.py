@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
 from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 
 from useraccounts.models import Account
+
 from .models import Category, Poll
 from .serializers import *
 
@@ -15,21 +17,41 @@ from .serializers import *
 from rest_framework.permissions import AllowAny
 from .permissions import IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly
 
+import django_filters
+from django.core.exceptions import PermissionDenied
+
+class PollFilter(django_filters.FilterSet):
+    interest = django_filters.CharFilter(method='filter_by_interest')
+    username = django_filters.CharFilter(field_name='created_by__username', lookup_expr='icontains')
+    category = django_filters.CharFilter(field_name='category__name', lookup_expr='icontains')
+
+    def filter_by_interest(self, queryset, name, value):
+        interest = self.request.query_params.get('interest')
+        if interest == "true":
+            user = self.request.user
+            if not user.is_authenticated:
+                raise PermissionDenied("Authentication required to view your interests.")
+            
+            categories = user.favorite_categories.all()
+            return queryset.filter(category__in=categories).exclude(created_by=user)
+        return queryset
+
+    class Meta:
+        model = Poll
+        fields = ['category__name', 'created_by__username']
+
 
 # ViewSet for creation and retrieval of polls
 class PollViewSet(viewsets.ModelViewSet):
     serializer_class = PollSerializer
     permission_classes = [IsOwnerOrReadOnly]
+    queryset = Poll.objects.all().order_by('-created_at')
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category__name', 'created_by__username']
+    filterset_class = PollFilter
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-        
-    def get_queryset(self):    
-        queryset = Poll.objects.all().order_by('-created_at')
-        category = self.request.query_params.get('category', None)
-        if category:
-            queryset = queryset.filter(category=category)
-        return queryset
 
 #A viewset to retrieve polls by category
 # This assumes that you have a foreign key relationship from Poll to Category 
@@ -136,7 +158,7 @@ class PollResultsView(APIView):
 @permission_classes([IsAuthenticated])
 def get_user_polls(request):
     if request.user.is_authenticated:
-        polls = Poll.objects.filter(created_by=request.user)
+        polls = Poll.objects.filter(created_by=request.user).order_by('-created_at')
         serializer = PollSerializer(polls, many=True)
         return Response(serializer.data)
     else:
