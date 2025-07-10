@@ -14,14 +14,10 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="dj_rest_auth")
 
-from decouple import config
-
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config("SECRET_KEY")
 # Application definition
 
 INSTALLED_APPS = [
