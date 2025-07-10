@@ -10,6 +10,6 @@ router.register(r'', PollViewSet, basename='poll')
 urlpatterns = [
     path('categories/', CategoriesListView.as_view(), name='category'),
     path('vote/<int:poll_id>/', VoteViewSet.as_view(), name='vote'),
-    path('<int:poll_id>/results/', PollResultsView.as_view(), name='poll-results'),
+    path('<int:poll_id>/results/', get_poll_results, name='poll-results'),
     path('', include(router.urls)),
 ]

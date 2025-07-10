@@ -2,7 +2,7 @@ import os
 from .base import *
 
 DEBUG = True
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY="secret-key"
 ALLOWED_HOSTS = ["*"]
 
 DATABASES = {

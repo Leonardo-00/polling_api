@@ -59,6 +59,7 @@
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary">Confirm edits</button>
+                            <button type="button" class="btn btn-secondary" onclick="deletePoll()">Delete poll</button>
                         </form>
                     </div>
                 </div>
@@ -178,6 +179,38 @@
                     alert("Error during poll update: " + JSON.stringify(errorData));
                 }
             });
+        
+            function deletePoll(){
+                const urlParams = new URLSearchParams(window.location.search);
+                const pollId = urlParams.get('id');
+
+                if (!pollId) {
+                    alert("Poll ID is missing in the URL.");
+                    return;
+                }
+
+                if (confirm("Are you sure you want to delete this poll? This action cannot be undone.")) {
+                    fetch(baseUrl + "api/polls/" + pollId + "/", {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Token ${token}`
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert("Poll deleted successfully.");
+                            window.location.href = "user_polls.html";  // o altra pagina
+                        } else {
+                            throw new Error("Failed to delete poll.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error deleting poll:", error);
+                        alert("Failed to delete poll.");
+                    });
+                }
+            }
+
         </script>
         <script src="js/bootstrap.bundle.min.js"></script>
     </body>

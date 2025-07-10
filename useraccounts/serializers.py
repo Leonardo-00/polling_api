@@ -85,8 +85,6 @@ class CustomUpdateSerializer(serializers.ModelSerializer):
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.email = validated_data.get('email', instance.email)
         
-        print(validated_data)
-        
         categories = validated_data.get('favorite_categories', [])
         if categories:
             instance.favorite_categories.set(categories)

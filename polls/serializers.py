@@ -3,9 +3,13 @@ from .models import *
 
 
 class VoteSerializer(serializers.ModelSerializer):
+    choice_text = serializers.CharField(source='choice.text', read_only=True)
+    poll_question = serializers.CharField(source='poll.question', read_only=True)
+    voted_by_username = serializers.CharField(source='voted_by.username', read_only=True)
+    
     class Meta:
         model = Vote
-        fields = ['id', 'poll', 'choice', 'voted_by']
+        fields = ['id', 'poll', 'poll_question', 'choice', 'choice_text', 'voted_by', 'voted_by_username']
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
@@ -48,7 +52,7 @@ class PollSerializer(serializers.ModelSerializer):
             'created_by_username'  # read-only
             
         ]
-        read_only_fields = ['id', 'created_by', 'created_at']
+        read_only_fields = ['id', 'choices', 'created_by', 'created_at']
 
     def to_representation(self, instance):
         # usa la serializzazione di base

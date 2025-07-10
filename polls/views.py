@@ -40,7 +40,6 @@ class PollFilter(django_filters.FilterSet):
         model = Poll
         fields = ['category__name', 'created_by__username']
 
-
 # ViewSet for creation and retrieval of polls
 class PollViewSet(viewsets.ModelViewSet):
     serializer_class = PollSerializer
@@ -52,17 +51,6 @@ class PollViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-
-#A viewset to retrieve polls by category
-# This assumes that you have a foreign key relationship from Poll to Category 
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Poll.objects.all().order_by('-created_at')
-    serializer_class = PollSerializer
-    permission_classes = [IsOwnerOrReadOnly]
-
-    def get_queryset(self):
-        category_name = self.kwargs.get('category_name')
-        return Poll.objects.filter(category__name=category_name)
 
 #A view to list all categories
 class CategoriesListView(APIView):
@@ -115,44 +103,44 @@ class VoteViewSet(APIView):
         )
 
         if created:
-            return Response({"message": "Voto registrato."}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Vote registered."}, status=status.HTTP_201_CREATED)
         else:
-            return Response({"message": "Voto aggiornato."}, status=status.HTTP_200_OK)
+            return Response({"message": "Vote updated."}, status=status.HTTP_200_OK)
 
 # A view to retrieve poll results
 # This view retrieves the results of a specific poll, including the number of votes for each choice
-class PollResultsView(APIView):
-    permission_classes = [AllowAny]
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_poll_results(request, poll_id):
     
-    def get(self, request, poll_id):
-        poll = get_object_or_404(Poll, id=poll_id)
-        choices = (
-            poll.choices
-            .annotate(votes_count=models.Count("votes"))
-            .values("id", "text", "votes_count")
-        )
+    poll = get_object_or_404(Poll, id=poll_id)
+    choices = (
+        poll.choices
+        .annotate(votes_count=models.Count("votes"))
+        .values("id", "text", "votes_count")
+    )
 
-        results = []
-        for choice in choices:
-            if(request.user.is_authenticated and Vote.objects.filter(poll=poll, choice__text=choice["text"], voted_by=request.user).exists()):
-                voted = True
+    results = []
+    for choice in choices:
+        result = {}
+        
+        result["id"] = choice["id"]
+        result["text"] = choice["text"]
+        result["votes"] = choice["votes_count"]
+        if(request.user.is_authenticated):
+            if(Vote.objects.filter(poll=poll, choice__text=choice["text"], voted_by=request.user).exists()):
+                result["voted"] = True
             else:
-                voted = False
-            results.append({
-                "id": choice["id"],
-                "text": choice["text"],
-                "votes": choice["votes_count"],
-                "voted": voted
-            })
+                result["voted"] = False
+        results.append(result)
 
-        data = {
-            "poll_id": poll.id,
-            "question": poll.question,
-            "choices": results
-        }
+    data = {
+        "poll_id": poll.id,
+        "question": poll.question,
+        "choices": results
+    }
 
-        return Response(data)
-
+    return Response(data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
